@@ -1,0 +1,98 @@
+#include <iostream>
+#include <vector>
+#include <omp.h>
+
+using namespace std;
+
+// Function for parallel Depth-First Search (DFS)
+void parallelDFS(const vector<vector<int>>& adj, int startVertex, vector<bool>& visited) {
+    // Mark the current vertex as visited
+    visited[startVertex] = true;
+    // Print the current vertex
+    cout << startVertex << " ";
+
+    // Iterate over the adjacent vertices of the current vertex
+    #pragma omp parallel for
+    for (int i = 0; i < adj[startVertex].size(); ++i) {
+        // Get the adjacent vertex
+        int n = adj[startVertex][i];
+        // If the adjacent vertex is not visited, recursively call DFS on it
+        if (!visited[n])
+            parallelDFS(adj, n, visited);
+    }
+}
+
+// Function for parallel Breadth-First Search (BFS)
+void parallelBFS(const vector<vector<int>>& adj, int startVertex) {
+    // Get the number of vertices in the graph
+    int V = adj.size();
+    // Create a vector to store visited status of vertices
+    vector<bool> visited(V, false);
+    // Create a vector to act as a queue for BFS
+    vector<int> queue(V); // Using an array as a queue
+    // Initialize pointers for front and rear of the queue
+    int front = 0, rear = 0;
+
+    // Mark the starting vertex as visited and enqueue it
+    visited[startVertex] = true;
+    queue[rear++] = startVertex;
+
+    // Iterate until the queue is empty
+    while (front != rear) {
+        // Dequeue a vertex from the queue
+        int v = queue[front++];
+        // Print the dequeued vertex
+        cout << v << " ";
+
+        // Iterate over the adjacent vertices of the dequeued vertex
+        #pragma omp parallel for
+        for (int i = 0; i < adj[v].size(); ++i) {
+            // Get the adjacent vertex
+            int n = adj[v][i];
+            // If the adjacent vertex is not visited, mark it as visited and enqueue it
+            if (!visited[n]) {
+                visited[n] = true;
+                queue[rear++] = n;
+            }
+        }
+    }
+}
+
+int main() {
+    // Creating an adjacency list representing the graph
+    vector<vector<int>> adj = {
+        {1, 2},     // Node 0 is connected to nodes 1 and 2
+        {3, 4},     // Node 1 is connected to nodes 3 and 4
+        {5, 6},     // Node 2 is connected to nodes 5 and 6
+        { },        // Node 3 has no outgoing edges
+        { },        // Node 4 has no outgoing edges
+        { },        // Node 5 has no outgoing edges
+        { }         // Node 6 has no outgoing edges
+    };
+
+    /*
+        0 -------->1
+        |         / \
+        |        /   \
+        |       /     \
+        v       v       v
+        2 ----> 3       4
+        |      |
+        |      |
+        v      v
+        5      6
+    */
+
+    // Perform Depth-First Search (DFS) starting from vertex 0
+    cout << "Depth-First Search (DFS): ";
+    vector<bool> visitedDFS(adj.size(), false);
+    parallelDFS(adj, 0, visitedDFS);
+    cout << endl;
+
+    // Perform Breadth-First Search (BFS) starting from vertex 0
+    cout << "Breadth-First Search (BFS): ";
+    parallelBFS(adj, 0);
+    cout << endl;
+
+    return 0;
+}
